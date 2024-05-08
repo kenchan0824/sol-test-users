@@ -3,7 +3,8 @@ import { web3 } from "@coral-xyz/anchor";
 import { TestUser } from "./testUser";
 const assert = require("assert");
 
-describe("sol_test_users", () => {
+describe("Solana Test Users Utilities", () => {
+  
   const provider = anchor.AnchorProvider.env()
   anchor.setProvider(provider);
 
