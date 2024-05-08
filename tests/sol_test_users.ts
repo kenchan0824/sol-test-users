@@ -1,16 +1,23 @@
 import * as anchor from "@coral-xyz/anchor";
-import { Program } from "@coral-xyz/anchor";
-import { SolTestUsers } from "../target/types/sol_test_users";
+import { web3 } from "@coral-xyz/anchor";
+import { TestUser } from "./testUser";
+const assert = require("assert");
 
 describe("sol_test_users", () => {
-  // Configure the client to use the local cluster.
-  anchor.setProvider(anchor.AnchorProvider.env());
+  const provider = anchor.AnchorProvider.env()
+  anchor.setProvider(provider);
 
-  const program = anchor.workspace.SolTestUsers as Program<SolTestUsers>;
+  const keypair = web3.Keypair.generate();
+  const userA = new TestUser(provider.connection, keypair);
 
-  it("Is initialized!", async () => {
-    // Add your test here.
-    const tx = await program.methods.initialize().rpc();
-    console.log("Your transaction signature", tx);
+  it("an user is initiated with 0 sol balance", async () => {
+    const balance = await userA.sol()
+    assert(balance === 0);
   });
+
+  // it("faucet() should airdrop users some sols", async () => {});
+
+  // it("the user can sign an anchor transaction", async () => {});
+
+
 });
