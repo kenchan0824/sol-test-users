@@ -11,11 +11,15 @@ describe("sol_test_users", () => {
   const userA = new TestUser(provider.connection, keypair);
 
   it("an user is initiated with 0 sol balance", async () => {
-    const balance = await userA.sol()
+    const balance = await userA.sol();
     assert(balance === 0);
   });
 
-  // it("faucet() should airdrop users some sols", async () => {});
+  it("faucet() should airdrop users the requested sols", async () => {
+    await userA.faucet(5);
+    const balance = await userA.sol();
+    assert(balance === 5);
+  });
 
   // it("the user can sign an anchor transaction", async () => {});
 
