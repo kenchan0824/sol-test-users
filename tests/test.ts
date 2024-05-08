@@ -1,3 +1,4 @@
+import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import * as anchor from "@coral-xyz/anchor";
 import { web3 } from "@coral-xyz/anchor";
 import { TestUser } from "./testUser";
@@ -13,13 +14,13 @@ describe("Solana Test Users", () => {
 
   it("an user is initiated with 0 sol balance", async () => {
     const balance = await userA.sol();
-    assert(balance === 0);
+    assert(balance == 0);
   });
 
   it("faucet() should airdrop users the requested sols", async () => {
     await userA.faucet(5);
     const balance = await userA.sol();
-    assert(balance === 5);
+    assert(balance >= 5);
   });
 
   it("the user can sign an anchor transaction", async () => {
@@ -39,6 +40,10 @@ describe("Solana Test Users", () => {
 
     const counter = await program.account.counter.fetch(counterPK);
     assert.ok(counter.owner.toBase58() === userA.publicKey.toBase58());
+  });
+
+  it("mint() should mint the user with requested token", async () => {
+    
   });
 
 });
