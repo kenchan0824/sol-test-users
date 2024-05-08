@@ -5,7 +5,7 @@ seeds = true
 skip-lint = false
 
 [programs.localnet]
-sol_test_users = "9uW6NmkG9TmMGfJjd91meyTfdhHQXvcNaAVr4FaBLDSs"
+sol_test_users = "7vwrU2qgvtHuWgXsSyzfH8iBzztHpKbe2gVDXz18aNUR"
 
 [registry]
 url = "https://api.apr.dev"

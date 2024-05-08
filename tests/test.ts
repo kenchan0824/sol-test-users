@@ -3,7 +3,7 @@ import { web3 } from "@coral-xyz/anchor";
 import { TestUser } from "./testUser";
 const assert = require("assert");
 
-describe("Solana Test Users Utilities", () => {
+describe("Solana Test Users", () => {
   
   const provider = anchor.AnchorProvider.env()
   anchor.setProvider(provider);
@@ -22,7 +22,23 @@ describe("Solana Test Users Utilities", () => {
     assert(balance === 5);
   });
 
-  // it("the user can sign an anchor transaction", async () => {});
+  it("the user can sign an anchor transaction", async () => {
+    const program = anchor.workspace.SeaCounter as Program<SeaCounter>;
+    const [counterPK, bump] = web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("counter"), userA.publicKey.toBuffer()],
+      program.programId
+    );
 
+    await program.methods.initCounter()
+      .accounts({
+        owner: userA.publicKey,
+        counter: counterPK
+      })
+      .signers([userA])
+      .rpc();
+
+    const counter = await program.account.counter.fetch(counterPK);
+    assert.ok(counter.owner.toBase58() === userA.publicKey.toBase58());
+  });
 
 });
