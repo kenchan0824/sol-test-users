@@ -50,15 +50,21 @@ describe("Solana Test Users", () => {
   });
 
   it("transfer() should transfer tokens to another test user", async () => {
-    const keypair = web3.Keypair.generate();
-    const userB = await TestUser.fromKeypair(provider.connection, keypair);
+    const userB = await TestUser.generate(provider.connection);
     let amount = await userB.balance("USDC");
     assert.ok(amount == 0);
 
     await userA.transfer(userB, "USDC", 500).commit();
+    assert.ok(userB.tokens["USDC"].toBase58() == userA.tokens["USDC"].toBase58());
+    assert.ok(userB.tokenAccounts["USDC"] instanceof web3.PublicKey);
+    
     amount = await userB.balance("USDC");
     assert.ok(amount > 0);
   });
+
+  // it("user instructions can be chained together", async () => {
+    
+  // });
 
 });
 

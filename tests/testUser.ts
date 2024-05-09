@@ -4,10 +4,9 @@ import {
 } from "@solana/web3.js";
 import {
   createInitializeMintInstruction, getMinimumBalanceForRentExemptMint,
-  getAssociatedTokenAddressSync, createAssociatedTokenAccountInstruction, createMintToInstruction,
-  createTransferInstruction,
+  getAssociatedTokenAddressSync, createAssociatedTokenAccountInstruction, 
+  createMintToInstruction, createTransferInstruction,
   MINT_SIZE, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID,
-  transfer
 } from "@solana/spl-token";
 
 
@@ -35,6 +34,11 @@ export class TestUser extends Keypair {
     const user = new TestUser(conn, keypair, rent);
     await user.faucet(5);
     return user;
+  }
+
+  static async generate(conn: Connection) {
+    const keypair = Keypair.generate();
+    return await this.fromKeypair(conn, keypair);
   }
 
   async sol() {
