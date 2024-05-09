@@ -11,13 +11,13 @@ describe("Solana Test Users", () => {
   const keypair = web3.Keypair.generate();
   let userA: TestUser = undefined;
 
-  it("an user is initiated with 5 sol balance", async () => {
+  it("test user is initiated with 5 sol", async () => {
     userA = await TestUser.fromKeypair(provider.connection, keypair);
     const balance = await userA.sol();
-    assert(balance >= 0);
+    assert(balance > 0);
   });
 
-  it("the user can sign an anchor transaction", async () => {
+  it("test user can sign an anchor transaction", async () => {
     const program = anchor.workspace.SeaCounter as Program<SeaCounter>;
     const [counterPK, bump] = web3.PublicKey.findProgramAddressSync(
       [Buffer.from("counter"), userA.publicKey.toBuffer()],
@@ -36,12 +36,15 @@ describe("Solana Test Users", () => {
     assert.ok(counter.owner.toBase58() === userA.publicKey.toBase58());
   });
 
-  it("mint() should mint the user with requested token", async () => {
+  it("mint() should mint test user the requested token", async () => {
+    let amount = await userA.balance("USDC");
+    assert.ok(amount == 0);
+    
     await userA.mint("USDC").commit();
     assert.ok(userA.mints["USDC"]);
     assert.ok(userA.tokenAccounts["USDC"]);
-
-    const amount = await userA.balance("USDC");
+    
+    amount = await userA.balance("USDC");
     assert.ok(amount > 0);
   });
 

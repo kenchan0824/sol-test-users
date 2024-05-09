@@ -1,11 +1,11 @@
 import {
-  Connection, Keypair, Transaction, sendAndConfirmTransaction, SystemProgram, LAMPORTS_PER_SOL
+  Connection, Keypair, Signer, PublicKey, Transaction, sendAndConfirmTransaction, 
+  SystemProgram, LAMPORTS_PER_SOL
 } from "@solana/web3.js";
 import {
   createInitializeMintInstruction, getMinimumBalanceForRentExemptMint,
-  MINT_SIZE, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, 
   getAssociatedTokenAddressSync, createAssociatedTokenAccountInstruction, createMintToInstruction,
-  getOrCreateAssociatedTokenAccount, createMint, mintTo
+  MINT_SIZE, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID
 } from "@solana/spl-token";
 
 
@@ -13,6 +13,9 @@ export class TestUser extends Keypair {
 
   conn: Connection;
   txn: Transaction;
+  signers: Signer[];
+  mints: {[index: string]: PublicKey};
+  tokenAccounts: {[index: string]: PublicKey};
 
   private constructor(conn: Connection, keypair: Keypair, rent: number) {
     super(keypair);
@@ -73,7 +76,7 @@ export class TestUser extends Keypair {
       // create token account
       createAssociatedTokenAccountInstruction(
         this.publicKey, // payer
-        tokenAccount, //
+        tokenAccount, 
         this.publicKey, // owner
         mint.publicKey, // mint
         TOKEN_PROGRAM_ID,
@@ -104,6 +107,8 @@ export class TestUser extends Keypair {
 
   async balance(symbol: String) {
     const tokenAccount = this.tokenAccounts[symbol]
+    if (!tokenAccount) return 0;
+    
     const { value } = await this.conn.getTokenAccountBalance(tokenAccount);
     return value.amount / Math.pow(10, value.decimals);
   }
