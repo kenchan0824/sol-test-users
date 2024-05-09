@@ -1,21 +1,24 @@
 import {
-  Connection, Keypair, Signer, PublicKey, Transaction, sendAndConfirmTransaction, 
+  Connection, Keypair, Signer, PublicKey, Transaction, sendAndConfirmTransaction,
   SystemProgram, LAMPORTS_PER_SOL
 } from "@solana/web3.js";
 import {
   createInitializeMintInstruction, getMinimumBalanceForRentExemptMint,
   getAssociatedTokenAddressSync, createAssociatedTokenAccountInstruction, createMintToInstruction,
-  MINT_SIZE, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID
+  createTransferInstruction,
+  MINT_SIZE, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID,
+  transfer
 } from "@solana/spl-token";
 
 
 export class TestUser extends Keypair {
 
   conn: Connection;
+  rent: number;
   txn: Transaction;
   signers: Signer[];
-  mints: {[index: string]: PublicKey};
-  tokenAccounts: {[index: string]: PublicKey};
+  tokens: { [index: string]: PublicKey };
+  tokenAccounts: { [index: string]: PublicKey };
 
   private constructor(conn: Connection, keypair: Keypair, rent: number) {
     super(keypair);
@@ -23,7 +26,7 @@ export class TestUser extends Keypair {
     this.rent = rent;
     this.txn = new Transaction();
     this.signers = [];
-    this.mints = {};
+    this.tokens = {};
     this.tokenAccounts = {}
   }
 
@@ -46,7 +49,7 @@ export class TestUser extends Keypair {
 
   mint(symbol: String) {
     const mint = Keypair.generate();
-    this.mints[symbol] = mint.publicKey;
+    this.tokens[symbol] = mint.publicKey;
 
     const tokenAccount = getAssociatedTokenAddressSync(
       mint.publicKey,
@@ -54,7 +57,7 @@ export class TestUser extends Keypair {
       false, // allowOwnerOffCurve
       TOKEN_PROGRAM_ID,
       ASSOCIATED_TOKEN_PROGRAM_ID
-    );
+    );   
     this.tokenAccounts[symbol] = tokenAccount;
 
     this.txn.add(
@@ -97,20 +100,65 @@ export class TestUser extends Keypair {
   }
 
   async commit() {
+    if (this.txn.instructions.length == 0) return;
     await sendAndConfirmTransaction(this.conn, this.txn, this.signers);
+    this.reset();
   }
 
-  rollback() {
+  reset() {
     this.txn = new Transaction();
     this.signers = [];
   }
 
-  async balance(symbol: String) {
+  async balance(symbol: string) {
     const tokenAccount = this.tokenAccounts[symbol]
     if (!tokenAccount) return 0;
-    
+
     const { value } = await this.conn.getTokenAccountBalance(tokenAccount);
     return value.amount / Math.pow(10, value.decimals);
   }
 
+  transfer(another: TestUser, symbol: string, amount: number) {
+    let destination = another.tokenAccounts[symbol];
+    if (!destination) {
+      const mint = this.tokens[symbol]
+      another.tokens[symbol] = mint;
+
+      const tokenAccount = getAssociatedTokenAddressSync(
+        mint,
+        another.publicKey,
+        false, // allowOwnerOffCurve
+        TOKEN_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      );   
+      another.tokenAccounts[symbol] = tokenAccount;
+      destination = tokenAccount;
+
+      this.txn.add(
+        // create token account
+        createAssociatedTokenAccountInstruction(
+          this.publicKey, // payer
+          tokenAccount, 
+          another.publicKey, // owner
+          mint, // mint
+          TOKEN_PROGRAM_ID,
+          ASSOCIATED_TOKEN_PROGRAM_ID
+        ),
+      );
+      this.signers.push(this);
+    }
+
+    this.txn.add(
+      createTransferInstruction(
+        this.tokenAccounts[symbol], 
+        destination, 
+        this.publicKey, 
+        amount * Math.pow(10, 9), 
+        [], // multiSigners 
+        TOKEN_PROGRAM_ID
+      )
+    );
+    this.signers.push(this);
+    return this;
+  }
 }

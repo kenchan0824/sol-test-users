@@ -1,6 +1,7 @@
 import * as anchor from "@coral-xyz/anchor";
 import { web3 } from "@coral-xyz/anchor";
 import { TestUser } from "./testUser";
+import { publicKey } from "@coral-xyz/anchor/dist/cjs/utils";
 const assert = require("assert");
 
 describe("Solana Test Users", () => {
@@ -41,11 +42,23 @@ describe("Solana Test Users", () => {
     assert.ok(amount == 0);
     
     await userA.mint("USDC").commit();
-    assert.ok(userA.mints["USDC"]);
-    assert.ok(userA.tokenAccounts["USDC"]);
+    assert.ok(userA.tokens["USDC"] instanceof web3.PublicKey);
+    assert.ok(userA.tokenAccounts["USDC"] instanceof web3.PublicKey);
     
     amount = await userA.balance("USDC");
     assert.ok(amount > 0);
   });
 
+  it("transfer() should transfer tokens to another test user", async () => {
+    const keypair = web3.Keypair.generate();
+    const userB = await TestUser.fromKeypair(provider.connection, keypair);
+    let amount = await userB.balance("USDC");
+    assert.ok(amount == 0);
+
+    await userA.transfer(userB, "USDC", 500).commit();
+    amount = await userB.balance("USDC");
+    assert.ok(amount > 0);
+  });
+
 });
+
